@@ -1,0 +1,24 @@
+{
+  "name": "anissati_plastek_api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@neo4j/graphql": "^5.11.0",
+    "@neo4j/graphql-ogm": "^5.9.1",
+    "anissati_plastek_api": "file:",
+    "apollo-server-express": "^3.13.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "graphql": "^16.9.0",
+    "neo4j-driver": "^5.27.0",
+    "nodemon": "^3.1.7"
+  }
+}
