@@ -1,21 +1,27 @@
 const resolvers = {
     Query: {
-      getRecipes: async (_, __, { driver }) => {
-        const session = driver.session();
-        try {
-          const result = await session.run(`MATCH (r:Recipe) RETURN r`);
-          return result.records.map((record) => ({
-            id: record.get('r').identity.low,
-            title: record.get('r').properties.title,
-            description: record.get('r').properties.description,
-          }));
-        } catch (error) {
-          console.error('Error fetching recipes:', error);
-          throw new Error('Failed to fetch recipes');
-        } finally {
-          await session.close();
-        }
-      },
+       getRecipes: async (_, __, { driver }) => {
+            const session = driver.session();
+            try {
+              const result = await session.run(`
+                MATCH (r:Recipe)
+                OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
+                OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
+                RETURN r {
+                  .*,
+                  ingredients: COLLECT(i { id: i.id, name: i.name }),
+                  category: c { id: c.id, name: c.name }
+                } AS recipe
+              `);
+          
+              return result.records.map((record) => record.get('recipe'));
+            } catch (error) {
+              console.error('Error fetching recipes:', error);
+              throw new Error('Failed to fetch recipes');
+            } finally {
+              await session.close();
+            }
+          },          
   
       getRecipeById: async (_, { id }, { driver }) => {
         const session = driver.session();
@@ -29,7 +35,7 @@ const resolvers = {
           }
           const recipe = result.records[0].get('r');
           return {
-            id: recipe.identity.low,
+            id: recipe.identity.id,
             title: recipe.properties.title,
             description: recipe.properties.description,
           };
@@ -40,6 +46,21 @@ const resolvers = {
           await session.close();
         }
       },
+      getIngredients: async (_, __, { driver }) => {
+        const session = driver.session();
+        try {
+            const result = await session.run(`MATCH (i:Ingredient) RETURN i.id AS id, i.name AS name`);
+            return result.records.map(record => ({
+              id: record.get('id'),
+              name: record.get('name')
+            }));
+        } catch (error) {
+          console.error('Error fetching ingredients:', error);
+          throw new Error('Failed to fetch ingredients');
+        } finally {
+          await session.close();
+        }
+      }      
     },
   
     Mutation: {
@@ -96,7 +117,8 @@ const resolvers = {
           const result = await session.run(
             `
             MERGE (i:Ingredient {name: $name})
-            RETURN i {.*} AS ingredient
+            ON CREATE SET i.id = randomUUID()
+            RETURN i { id: i.id, name: i.name } AS ingredient
             `,
             { name }
           );
@@ -108,26 +130,26 @@ const resolvers = {
           await session.close();
         }
       },
-
+      
       createCategory: async (_, { name }, { driver }) => {
         const session = driver.session();
         try {
           const result = await session.run(
             `
             MERGE (c:Category {name: $name})
-            RETURN c {.*} AS category
+            ON CREATE SET c.id = randomUUID()
+            RETURN c { id: c.id, name: c.name } AS category
             `,
             { name }
           );
-          // Ensure that we return the category node with all its properties
-          return result.records.length > 0 ? result.records[0].get('category') : null;
+          return result.records[0].get('category');
         } catch (error) {
           console.error('Error creating category:', error);
           throw new Error('Failed to create category');
         } finally {
           await session.close();
         }
-      },      
+      },       
   
       updateRecipe: async (
         _,

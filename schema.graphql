@@ -31,6 +31,7 @@ type User @node {
 type Query {
   getRecipes: [Recipe!]!
   getRecipeById(id: ID!): Recipe
+  getIngredients: [Ingredient]
 }
 
 # Mutation Operations (Write)
