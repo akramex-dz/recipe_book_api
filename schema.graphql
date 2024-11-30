@@ -32,6 +32,10 @@ type Query {
   getRecipes: [Recipe!]!
   getRecipeById(id: ID!): Recipe
   getIngredients: [Ingredient]
+  getIngredientById(id: ID!): Ingredient
+  getCategoryById(id: ID!): Category
+  getUsers: [User!]!
+  getUserById(id: ID!): User
 }
 
 # Mutation Operations (Write)
@@ -46,14 +50,6 @@ type Mutation {
     createdByUserId: ID!
   ): Recipe
 
-  createIngredient(
-    name: String!
-  ): Ingredient
-
-  createCategory(
-    name: String!
-  ): Category
-
   updateRecipe(
     id: ID!,
     title: String,
@@ -65,4 +61,23 @@ type Mutation {
   ): Recipe
 
   deleteRecipe(id: ID!): Boolean
+
+  createIngredient(
+    name: String!
+  ): Ingredient
+
+  updateIngredient(id: ID!, name: String!): Ingredient
+  deleteIngredient(id: ID!): Boolean
+
+  createCategory(
+    name: String!
+  ): Category
+
+  updateCategory(id: ID!, name: String!): Category
+
+  deleteCategory(id: ID!): Boolean
+
+  createUser(username: String!): User
+  updateUser(id: ID!, username: String!): User
+  deleteUser(id: ID!): Boolean
 }
