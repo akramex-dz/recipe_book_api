@@ -1,8 +1,8 @@
-const { ApolloServer } = require('apollo-server-express');
-const { Neo4jGraphQL } = require('@neo4j/graphql');
-const neo4j = require('neo4j-driver');
-const express = require('express');
-const dotenv = require('dotenv');
+const { ApolloServer } = require("apollo-server-express");
+const { Neo4jGraphQL } = require("@neo4j/graphql");
+const neo4j = require("neo4j-driver");
+const express = require("express");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
@@ -11,7 +11,7 @@ const app = express();
 const driver = neo4j.driver(
   process.env.NEO4J_URI,
   neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD),
-  { encrypted: 'ENCRYPTION_OFF' }
+  { encrypted: "ENCRYPTION_OFF" }
 );
 
 const typeDefs = `
@@ -41,65 +41,67 @@ const resolvers = {
     recipes: async () => {
       const session = driver.session();
       try {
-        const result = await session.run('MATCH (r:Recipe) RETURN r');
+        const result = await session.run("MATCH (r:Recipe) RETURN r");
         await session.close();
-        return result.records.map(record => ({
-          id: record.get('r').identity.low,
-          name: record.get('r').properties.name,
-          description: record.get('r').properties.description,
-          ingredients: record.get('r').properties.ingredients
-        }));
+        return result;
       } catch (error) {
-        console.error('Error fetching recipes:', error);
+        console.error("Error fetching recipes:", error);
         throw error;
       }
     },
     recipeById: async (_, { id }) => {
       const session = driver.session();
       try {
-        const result = await session.run('MATCH (r:Recipe {id: $id}) RETURN r', { id });
+        const result = await session.run(
+          "MATCH (r:Recipe {id: $id}) RETURN r",
+          { id }
+        );
         await session.close();
-        return result.records[0]?.get('r');
+        return result.records[0]?.get("r");
       } catch (error) {
-        console.error('Error fetching recipe:', error);
+        console.error("Error fetching recipe:", error);
         throw error;
       }
-    }
+    },
   },
   Mutation: {
     createRecipe: async (_, { name, description, ingredients }) => {
       const session = driver.session();
       try {
-        console.log('Creating recipe with:', { name, description, ingredients });
-      
+        console.log("Creating recipe with:", {
+          name,
+          description,
+          ingredients,
+        });
+
         const result = await session.run(
           `CREATE (r:Recipe {name: $name, description: $description, ingredients: $ingredients}) 
            RETURN r`,
           {
             name: name,
             description: description || null,
-            ingredients: ingredients || []
+            ingredients: ingredients || [],
           }
         );
-      
+
         await session.close();
-      
+
         if (result.records.length === 0) {
-          console.error('No records found in the result.');
+          console.error("No records found in the result.");
           return null;
         }
-      
-        const createdRecipe = result.records[0].get('r');
-        console.log('Created recipe:', createdRecipe);
-      
+
+        const createdRecipe = result.records[0].get("r");
+        console.log("Created recipe:", createdRecipe);
+
         return {
           id: createdRecipe.identity.low,
           name: createdRecipe.properties.name,
           description: createdRecipe.properties.description,
-          ingredients: createdRecipe.properties.ingredients
+          ingredients: createdRecipe.properties.ingredients,
         };
       } catch (error) {
-        console.error('Error creating recipe:', error);
+        console.error("Error creating recipe:", error);
         throw error;
       }
     },
@@ -107,28 +109,31 @@ const resolvers = {
       const session = driver.session();
       try {
         const result = await session.run(
-          'MATCH (r:Recipe {id: $id}) SET r.name = $name, r.description = $description, r.ingredients = $ingredients RETURN r',
+          "MATCH (r:Recipe {id: $id}) SET r.name = $name, r.description = $description, r.ingredients = $ingredients RETURN r",
           { id, name, description, ingredients }
         );
         await session.close();
-        return result.records[0]?.get('r');
+        return result.records[0]?.get("r");
       } catch (error) {
-        console.error('Error updating recipe:', error);
+        console.error("Error updating recipe:", error);
         throw error;
       }
     },
     deleteRecipe: async (_, { id }) => {
       const session = driver.session();
       try {
-        const result = await session.run('MATCH (r:Recipe {id: $id}) DELETE r', { id });
+        const result = await session.run(
+          "MATCH (r:Recipe {id: $id}) DELETE r",
+          { id }
+        );
         await session.close();
         return result.records.length > 0;
       } catch (error) {
-        console.error('Error deleting recipe:', error);
+        console.error("Error deleting recipe:", error);
         throw error;
       }
-    }
-  }
+    },
+  },
 };
 
 async function startServer() {
@@ -139,7 +144,7 @@ async function startServer() {
   server.applyMiddleware({ app });
 
   app.listen(4000, () => {
-    console.log('Server is running on http://localhost:4000/graphql');
+    console.log("Server is running on http://localhost:4000/graphql");
   });
 }
 
