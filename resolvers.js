@@ -7,11 +7,13 @@ const resolvers = {
           MATCH (r:Recipe)
           OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
           OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
-          WITH r, COLLECT(i { id: i.id, name: i.name }) AS ingredients, c { id: c.id, name: c.name } AS category
+          OPTIONAL MATCH (r)-[:CREATED]->(u:User)
+          WITH r, COLLECT(i { id: i.id, name: i.name }) AS ingredients, c { id: c.id, name: c.name } AS category, u { id: u.id, username: u.username } AS createdBy
           RETURN r {
             .*,
             ingredients: ingredients,
-            category: category
+            category: category,
+            createdBy: createdBy
           } AS recipe
         `);
         return result.records.map((record) => record.get("recipe"));
@@ -22,22 +24,37 @@ const resolvers = {
         await session.close();
       }
     },
-
     getRecipeById: async (_, { id }, { driver }) => {
       const session = driver.session();
       try {
-        const result = await session.run(
-          `MATCH (r:Recipe {id: $id}) RETURN r`,
-          { id }
-        );
+        const result = await session.run(`
+          MATCH (r:Recipe {id: $id})
+          OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
+          OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
+          OPTIONAL MATCH (r)-[:CREATED]->(u:User)
+          WITH r, COLLECT(i { id: i.id, name: i.name }) AS ingredients, c { id: c.id, name: c.name } AS category, u { id: u.id, username: u.username } AS createdBy
+          RETURN r {
+            .*,
+            ingredients: ingredients,
+            category: category,
+            createdBy: createdBy
+          } AS recipe
+        `, { id });
+        
         if (result.records.length === 0) {
           throw new Error("Recipe not found");
         }
-        const recipe = result.records[0].get("r");
+        
+        const recipe = result.records[0].get("recipe");
         return {
-          id: recipe.properties.id,
-          title: recipe.properties.title,
-          description: recipe.properties.description,
+          id: recipe.id,
+          title: recipe.title,
+          description: recipe.description,
+          difficulty: recipe.difficulty,
+          time: recipe.time,
+          ingredients: recipe.ingredients,
+          category: recipe.category,
+          createdBy: recipe.createdBy,
         };
       } catch (error) {
         console.error("Error fetching recipe:", error);
@@ -45,8 +62,7 @@ const resolvers = {
       } finally {
         await session.close();
       }
-    },
-
+    },    
     getIngredients: async (_, __, { driver }) => {
       const session = driver.session();
       try {
@@ -64,8 +80,67 @@ const resolvers = {
         await session.close();
       }
     },
+    getIngredientById: async (_, { id }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (i:Ingredient {id: $id}) RETURN i`,
+          { id }
+        );
+        if (result.records.length === 0) throw new Error("Ingredient not found");
+        return result.records[0].get("i").properties;
+      } catch (error) {
+        console.error("Error fetching ingredient:", error);
+        throw new Error("Failed to fetch ingredient");
+      } finally {
+        await session.close();
+      }
+    },
+    getCategoryById: async (_, { id }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (c:Category {id: $id}) RETURN c`,
+          { id }
+        );
+        if (result.records.length === 0) throw new Error("Category not found");
+        return result.records[0].get("c").properties;
+      } catch (error) {
+        console.error("Error fetching category:", error);
+        throw new Error("Failed to fetch category");
+      } finally {
+        await session.close();
+      }
+    },
+    getUsers: async (_, __, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(`MATCH (u:User) RETURN u`);
+        return result.records.map((record) => record.get("u").properties);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        throw new Error("Failed to fetch users");
+      } finally {
+        await session.close();
+      }
+    },
+    getUserById: async (_, { id }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (u:User {id: $id}) RETURN u`,
+          { id }
+        );
+        if (result.records.length === 0) throw new Error("User not found");
+        return result.records[0].get("u").properties;
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        throw new Error("Failed to fetch user");
+      } finally {
+        await session.close();
+      }
+    },
   },
-
   Mutation: {
     createRecipe: async (
       _,
@@ -88,17 +163,19 @@ const resolvers = {
           WITH r
           UNWIND $ingredients AS ingredientName
           MERGE (i:Ingredient {name: ingredientName})
+          ON CREATE SET i.id = randomUUID()
           MERGE (r)-[:HAS_INGREDIENT]->(i)
           WITH r
           MERGE (c:Category {name: $category})
+          ON CREATE SET c.id = randomUUID()
           MERGE (r)-[:BELONGS_TO]->(c)
           WITH r
           MERGE (u:User {id: $createdByUserId})
           MERGE (r)-[:CREATED]->(u)
           RETURN r {
             .*,
-            ingredients: [(r)-[:HAS_INGREDIENT]->(i) | i.name],
-            category: head([(r)-[:BELONGS_TO]->(c) | c.name]),
+            ingredients: [(r)-[:HAS_INGREDIENT]->(i) | i {id: i.id, name: i.name}],
+            category: head([(r)-[:BELONGS_TO]->(c) | c {id: c.id, name: c.name}]),
             createdBy: head([(r)-[:CREATED]->(u) | u.username])
           } AS recipe
           `,
@@ -119,14 +196,14 @@ const resolvers = {
       } finally {
         await session.close();
       }
-    },
+    },    
 
     createIngredient: async (_, { name }, { driver }) => {
       const session = driver.session();
       try {
         const result = await session.run(
           `
-          MERGE (i:Ingredient {name: $name})
+          MERGE (i:Ingredient {id: randomUUID(), name: $name})
           RETURN i {.*} AS ingredient
           `,
           { name }
@@ -149,7 +226,7 @@ const resolvers = {
       try {
         const result = await session.run(
           `
-          MERGE (c:Category {name: $name})
+          MERGE (c:Category {id: randomUUID(), name: $name})
           RETURN c {.*} AS category
           `,
           { name }
@@ -185,6 +262,7 @@ const resolvers = {
           UNWIND $ingredients AS ingredientName
           MERGE (i:Ingredient {name: ingredientName})
           MERGE (r)-[:HAS_INGREDIENT]->(i)
+          WITH r
           OPTIONAL MATCH (r)-[rc:BELONGS_TO]->(c:Category)
           DELETE rc
           WITH r
@@ -234,6 +312,115 @@ const resolvers = {
       } catch (error) {
         console.error("Error deleting recipe:", error);
         throw new Error("Failed to delete recipe");
+      } finally {
+        await session.close();
+      }
+    },
+
+    updateIngredient: async (_, { id, name }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (i:Ingredient {id: $id}) SET i.name = $name RETURN i`,
+          { id, name }
+        );
+        if (result.records.length === 0) throw new Error("Ingredient not found");
+        return result.records[0].get("i").properties;
+      } catch (error) {
+        console.error("Error updating ingredient:", error);
+        throw new Error("Failed to update ingredient");
+      } finally {
+        await session.close();
+      }
+    },
+    deleteIngredient: async (_, { id }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (i:Ingredient {id: $id}) DETACH DELETE i RETURN COUNT(i) > 0 AS deleted`,
+          { id }
+        );
+        return result.records[0].get("deleted");
+      } catch (error) {
+        console.error("Error deleting ingredient:", error);
+        throw new Error("Failed to delete ingredient");
+      } finally {
+        await session.close();
+      }
+    },
+    updateCategory: async (_, { id, name }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (c:Category {id: $id}) SET c.name = $name RETURN c`,
+          { id, name }
+        );
+        if (result.records.length === 0) throw new Error("Category not found");
+        return result.records[0].get("c").properties;
+      } catch (error) {
+        console.error("Error updating category:", error);
+        throw new Error("Failed to update category");
+      } finally {
+        await session.close();
+      }
+    },
+    deleteCategory: async (_, { id }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (c:Category {id: $id}) DETACH DELETE c RETURN COUNT(c) > 0 AS deleted`,
+          { id }
+        );
+        return result.records[0].get("deleted");
+      } catch (error) {
+        console.error("Error deleting category:", error);
+        throw new Error("Failed to delete category");
+      } finally {
+        await session.close();
+      }
+    },
+    createUser: async (_, { username }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `CREATE (u:User {id: randomUUID(), username: $username}) RETURN u`,
+          { username }
+        );
+        return result.records[0].get("u").properties;
+      } catch (error) {
+        console.error("Error creating user:", error);
+        throw new Error("Failed to create user");
+      } finally {
+        await session.close();
+      }
+    },
+    updateUser: async (_, { id, username }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (u:User {id: $id}) SET u.username = $username RETURN u`,
+          { id, username }
+        );
+        if (result.records.length === 0) throw new Error("User not found");
+        return result.records[0].get("u").properties;
+      } catch (error) {
+        console.error("Error updating user:", error);
+        throw new Error("Failed to update user");
+      } finally {
+        await session.close();
+      }
+    },
+    deleteUser: async (_, { id }, { driver }) => {
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `MATCH (u:User {id: $id}) DETACH DELETE u RETURN COUNT(u) > 0 AS deleted`,
+          { id }
+        );
+        return result.records[0].get("deleted");
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        throw new Error("Failed to delete user");
       } finally {
         await session.close();
       }
