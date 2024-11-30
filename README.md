@@ -1,1 +1,5 @@
 test
+
+
+JWT_SECRET=projectNOSQL
+JWT_EXPIRY=30d
