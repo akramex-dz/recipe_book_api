@@ -1,0 +1,67 @@
+type Recipe @node {
+  id: ID! @id
+  title: String!
+  description: String
+  difficulty: String!
+  time: Int!
+  ingredients: [Ingredient!]! @relationship(type: "HAS_INGREDIENT", direction: OUT)
+  category: Category @relationship(type: "BELONGS_TO", direction: OUT)
+  createdBy: User @relationship(type: "CREATED", direction: OUT)
+}
+
+type Ingredient @node {
+  id: ID! @id
+  name: String!
+  recipes: [Recipe!]! @relationship(type: "HAS_INGREDIENT", direction: IN)
+}
+
+type Category @node {
+  id: ID! @id
+  name: String!
+  recipes: [Recipe!]! @relationship(type: "BELONGS_TO", direction: IN)
+}
+
+type User @node {
+  id: ID! @id
+  username: String!
+  recipes: [Recipe!]! @relationship(type: "CREATED", direction: OUT)
+}
+
+# Query Operations (Read)
+type Query {
+  getRecipes: [Recipe!]!
+  getRecipeById(id: ID!): Recipe
+}
+
+# Mutation Operations (Write)
+type Mutation {
+  createRecipe(
+    title: String!,
+    description: String,
+    difficulty: String,
+    time: Int,
+    ingredients: [String!]!,
+    category: String!,
+    createdByUserId: ID!
+  ): Recipe
+
+  createIngredient(
+    name: String!
+  ): Ingredient
+
+  createCategory(
+    name: String!
+  ): Category
+
+  updateRecipe(
+    id: ID!,
+    title: String,
+    description: String,
+    difficulty: String,
+    time: Int,
+    ingredients: [String!],
+    category: String
+  ): Recipe
+
+  deleteRecipe(id: ID!): Boolean
+}
