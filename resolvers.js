@@ -1,5 +1,32 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
 const resolvers = {
   Query: {
+    // user queries
+    getUserInformation: async (_, __, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+      const session = driver.session();
+      try {
+        const result = await session.run(`MATCH (u:User {id: $id}) RETURN u`, {
+          id: user.id,
+        });
+        if (result.records.length === 0) {
+          throw new Error("User not found");
+        }
+        const userData = result.records[0].get("u").properties;
+        return userData;
+      } catch (error) {
+        console.error("Error fetching user information:", error);
+        throw new Error("Failed to fetch user information");
+      } finally {
+        await session.close();
+      }
+    },
+    // recipes queries
     getRecipes: async (_, __, { driver }) => {
       const session = driver.session();
       try {
@@ -67,6 +94,104 @@ const resolvers = {
   },
 
   Mutation: {
+    // user mutations
+    registerUser: async (_, { username, email, password }, { driver }) => {
+      const encryptedPassword = await bcrypt.hash(password, 10); // Hash the password
+      const session = driver.session();
+
+      try {
+        const userExists = await session.run(
+          `
+      MATCH (u:User {email: $email})
+      RETURN u
+      `,
+          { email }
+        );
+
+        if (userExists.records.length) {
+          throw new Error("User already exists");
+        }
+
+        const result = await session.run(
+          `
+  CREATE (u:User {id: randomUUID(), username: $username, email: $email, password: $password})
+  RETURN u
+  `,
+          { username, email, password: encryptedPassword }
+        );
+
+        if (!result.records.length) {
+          throw new Error("User registration failed");
+        }
+
+        const user = result.records[0].get("u").properties;
+
+        const token = jwt.sign(
+          { id: user.id, email: user.email, username: user.username },
+          process.env.JWT_SECRET, // Use a secure secret key from environment variables
+          { expiresIn: process.env.JWT_EXPIRY } // Set the expiry time
+        );
+
+        return {
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+          },
+        };
+      } catch (error) {
+        throw new Error("Registration error: " + error.message);
+      } finally {
+        await session.close();
+      }
+    },
+
+    loginUser: async (_, { email, password }, { driver }) => {
+      const session = driver.session();
+
+      try {
+        const result = await session.run(
+          `
+      MATCH (u:User {email: $email})
+      RETURN u
+      `,
+          { email }
+        );
+
+        if (!result.records.length) {
+          throw new Error("User not found");
+        }
+
+        const user = result.records[0].get("u").properties;
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+          throw new Error("Invalid credentials");
+        }
+
+        const token = jwt.sign(
+          { id: user.id, email: user.email, username: user.username },
+          process.env.JWT_SECRET, // Use a secure secret key from environment variables
+          { expiresIn: process.env.JWT_EXPIRY } // Set the expiry time
+        );
+
+        return {
+          token,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+          },
+        };
+      } catch (error) {
+        throw new Error("Login error: " + error.message);
+      } finally {
+        await session.close();
+      }
+    },
+
+    // recipe mutations
     createRecipe: async (
       _,
       {
