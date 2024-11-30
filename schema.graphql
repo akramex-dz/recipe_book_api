@@ -24,6 +24,8 @@ type Category @node {
 type User @node {
   id: ID! @id
   username: String!
+  email: String!
+  password: String! @private
   recipes: [Recipe!]! @relationship(type: "CREATED", direction: OUT)
 }
 
@@ -36,27 +38,33 @@ type Query {
   getCategoryById(id: ID!): Category
   getUsers: [User!]!
   getUserById(id: ID!): User
+  getUserInformation: User
+}
+
+type responseUser {
+  token: String
+  user: User
 }
 
 # Mutation Operations (Write)
 type Mutation {
   createRecipe(
-    title: String!,
-    description: String,
-    difficulty: String,
-    time: Int,
-    ingredients: [String!]!,
-    category: String!,
+    title: String!
+    description: String
+    difficulty: String
+    time: Int
+    ingredients: [String!]!
+    category: String!
     createdByUserId: ID!
   ): Recipe
 
   updateRecipe(
-    id: ID!,
-    title: String,
-    description: String,
-    difficulty: String,
-    time: Int,
-    ingredients: [String!],
+    id: ID!
+    title: String
+    description: String
+    difficulty: String
+    time: Int
+    ingredients: [String!]
     category: String
   ): Recipe
 
@@ -77,7 +85,14 @@ type Mutation {
 
   deleteCategory(id: ID!): Boolean
 
+  registerUser(
+    username: String!
+    email: String!
+    password: String!
+  ): responseUser
   createUser(username: String!): User
   updateUser(id: ID!, username: String!): User
   deleteUser(id: ID!): Boolean
+  loginUser(email: String!, password: String!): responseUser
+
 }
