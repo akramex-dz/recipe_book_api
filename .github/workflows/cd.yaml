@@ -1,0 +1,27 @@
+name: CD Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-to-vercel:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: success()  # Only deploy if tests passed
+
+    steps:
+    # Checkout the code again for the deployment job
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Set up Vercel CLI
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+
+    - name: Deploy to Vercel
+      run: |
+        vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --confirm
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
