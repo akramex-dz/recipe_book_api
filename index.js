@@ -3,7 +3,7 @@ const { Neo4jGraphQL } = require('@neo4j/graphql');
 const neo4j = require('neo4j-driver');
 const fs = require('fs');
 const path = require('path');
-const resolvers = require('./resolvers'); 
+const resolvers = require('./resolvers');
 require('dotenv').config();
 
 // Load the GraphQL schema
@@ -15,7 +15,22 @@ const driver = neo4j.driver(
   neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
 );
 
-// Create a Neo4jGraphQL instance
+async function testConnection() {
+  const session = driver.session();
+  try {
+    // Run a simple query to check the connection
+    const result = await session.run('RETURN "Connection successful" AS message');
+    console.log(result.records[0].get('message'));  // Should print: "Connection successful"
+  } catch (error) {
+    console.error('Error connecting to Neo4j:', error);
+  } finally {
+    await session.close();
+  }
+}
+
+// Test connection before starting the server
+testConnection();
+
 const neoSchema = new Neo4jGraphQL({ typeDefs, driver, resolvers });
 
 async function startServer() {
