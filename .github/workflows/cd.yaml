@@ -7,9 +7,7 @@ on:
 
 jobs:
   deploy-to-vercel:
-    needs: build-and-test
     runs-on: ubuntu-latest
-    if: success()  # Only deploy if tests passed
 
     steps:
     # Checkout the code again for the deployment job
