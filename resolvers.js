@@ -14,7 +14,6 @@ const resolvers = {
             category: category
           } AS recipe
         `);
-
         return result.records.map((record) => record.get("recipe"));
       } catch (error) {
         console.error("Error fetching recipes:", error);
@@ -51,13 +50,13 @@ const resolvers = {
     getIngredients: async (_, __, { driver }) => {
       const session = driver.session();
       try {
-        const result = await session.run(
-          `MATCH (i:Ingredient) RETURN i.id AS id, i.name AS name`
-        );
-        return result.records.map((record) => ({
-          id: record.get("id"),
-          name: record.get("name"),
-        }));
+        const result = await session.run(`
+          MATCH (i:Ingredient)
+          OPTIONAL MATCH (i)<-[:HAS_INGREDIENT]-(r:Recipe)
+          WITH i, COLLECT(r { id: r.id, title: r.title }) AS recipes
+          RETURN i { id: i.id, name: i.name, recipes: recipes } AS ingredient
+        `);
+        return result.records.map((record) => record.get("ingredient"));
       } catch (error) {
         console.error("Error fetching ingredients:", error);
         throw new Error("Failed to fetch ingredients");
