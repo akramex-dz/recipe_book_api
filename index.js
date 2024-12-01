@@ -44,6 +44,8 @@ async function startServer() {
     const schema = await neoSchema.getSchema();
     const server = new ApolloServer({
       schema,
+      introspection: true,
+      playground: true,
       context: ({ req }) => {
         // Get token from Authorization header
         const authHeader = req.headers.authorization;
