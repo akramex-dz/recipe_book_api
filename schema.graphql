@@ -33,6 +33,8 @@ type User @node {
 type Query {
   getRecipes: [Recipe!]!
   getRecipeById(id: ID!): Recipe
+  getRecipesByUserId(userId: ID!): [Recipe!]!
+  getMyRecipes: [Recipe!]!
   getIngredients: [Ingredient]
   getIngredientById(id: ID!): Ingredient
   getCategoryById(id: ID!): Category
@@ -55,7 +57,6 @@ type Mutation {
     time: Int
     ingredients: [String!]!
     category: String!
-    createdByUserId: ID!
   ): Recipe
 
   updateRecipe(
