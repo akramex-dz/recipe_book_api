@@ -60,7 +60,8 @@ const resolvers = {
       }
       const session = driver.session();
       try {
-        const result = await session.run(`
+        const result = await session.run(
+          `
           MATCH (r:Recipe {id: $id})
           OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
           OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
@@ -72,12 +73,14 @@ const resolvers = {
             category: category,
             createdBy: createdBy
           } AS recipe
-        `, { id });
-        
+        `,
+          { id }
+        );
+
         if (result.records.length === 0) {
           throw new Error("Recipe not found");
         }
-        
+
         const recipe = result.records[0].get("recipe");
         return {
           id: recipe.id,
@@ -95,7 +98,7 @@ const resolvers = {
       } finally {
         await session.close();
       }
-    },    
+    },
     getIngredients: async (_, __, { driver, user }) => {
       if (!user) {
         throw new Error("Unauthorized");
@@ -126,7 +129,8 @@ const resolvers = {
           `MATCH (i:Ingredient {id: $id}) RETURN i`,
           { id }
         );
-        if (result.records.length === 0) throw new Error("Ingredient not found");
+        if (result.records.length === 0)
+          throw new Error("Ingredient not found");
         return result.records[0].get("i").properties;
       } catch (error) {
         console.error("Error fetching ingredient:", error);
@@ -175,10 +179,9 @@ const resolvers = {
       }
       const session = driver.session();
       try {
-        const result = await session.run(
-          `MATCH (u:User {id: $id}) RETURN u`,
-          { id }
-        );
+        const result = await session.run(`MATCH (u:User {id: $id}) RETURN u`, {
+          id,
+        });
         if (result.records.length === 0) throw new Error("User not found");
         return result.records[0].get("u").properties;
       } catch (error) {
@@ -345,7 +348,7 @@ const resolvers = {
       } finally {
         await session.close();
       }
-    },    
+    },
 
     createIngredient: async (_, { name }, { driver, user }) => {
       if (!user) {
@@ -488,7 +491,8 @@ const resolvers = {
           `MATCH (i:Ingredient {id: $id}) SET i.name = $name RETURN i`,
           { id, name }
         );
-        if (result.records.length === 0) throw new Error("Ingredient not found");
+        if (result.records.length === 0)
+          throw new Error("Ingredient not found");
         return result.records[0].get("i").properties;
       } catch (error) {
         console.error("Error updating ingredient:", error);
@@ -570,7 +574,7 @@ const resolvers = {
         await session.close();
       }
     },
-    updateUser: async (_, { id, username }, { drive, user }) => {
+    updateUser: async (_, { id, username }, { driver, user }) => {
       if (!user) {
         throw new Error("Unauthorized");
       }
