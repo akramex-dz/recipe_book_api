@@ -34,9 +34,11 @@ type Query {
   getRecipes: [Recipe!]!
   getRecipeById(id: ID!): Recipe
   getRecipesByUserId(userId: ID!): [Recipe!]!
+  searchRecipes(query: String!): [Recipe!]!
   getMyRecipes: [Recipe!]!
   getIngredients: [Ingredient]
   getIngredientById(id: ID!): Ingredient
+  searchIngredients(query: String!): [Ingredient!]!
   getCategoryById(id: ID!): Category
   getUsers: [User!]!
   getUserById(id: ID!): User
