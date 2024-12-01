@@ -51,21 +51,20 @@ async function startServer() {
         const authHeader = req.headers.authorization;
         let user = null;
 
-        try {
-          if (authHeader && authHeader.startsWith("Bearer ")) {
-            const token = authHeader.split(" ")[1]; // Extract token
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+          const token = authHeader.split(" ")[1]; // Extract token
+          try {
             // Verify the token and decode user data
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             user = { id: decoded.id }; // Store user information (e.g., ID)
             console.log("Authenticated user:", user);
             return { driver, user }; // Return the user info in context
-          } else {
-            throw new Error("No Authorization header or invalid format");
+          } catch (error) {
+            console.error("Authentication error:", error);
           }
-        } catch (error) {
-          console.error("Authentication error:", error);
-          throw new Error("Access denied");
         }
+
+        return { driver };
       },
     });
 

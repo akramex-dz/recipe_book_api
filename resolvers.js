@@ -27,7 +27,10 @@ const resolvers = {
       }
     },
     // recipes queries
-    getRecipes: async (_, __, { driver }) => {
+    getRecipes: async (_, __, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(`
@@ -51,7 +54,10 @@ const resolvers = {
         await session.close();
       }
     },
-    getRecipeById: async (_, { id }, { driver }) => {
+    getRecipeById: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(`
@@ -90,7 +96,10 @@ const resolvers = {
         await session.close();
       }
     },    
-    getIngredients: async (_, __, { driver }) => {
+    getIngredients: async (_, __, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(`
@@ -107,7 +116,10 @@ const resolvers = {
         await session.close();
       }
     },
-    getIngredientById: async (_, { id }, { driver }) => {
+    getIngredientById: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -123,7 +135,10 @@ const resolvers = {
         await session.close();
       }
     },
-    getCategoryById: async (_, { id }, { driver }) => {
+    getCategoryById: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -139,7 +154,10 @@ const resolvers = {
         await session.close();
       }
     },
-    getUsers: async (_, __, { driver }) => {
+    getUsers: async (_, __, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(`MATCH (u:User) RETURN u`);
@@ -151,7 +169,10 @@ const resolvers = {
         await session.close();
       }
     },
-    getUserById: async (_, { id }, { driver }) => {
+    getUserById: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -278,8 +299,11 @@ const resolvers = {
         category,
         createdByUserId,
       },
-      { driver }
+      { driver, user }
     ) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -323,7 +347,10 @@ const resolvers = {
       }
     },    
 
-    createIngredient: async (_, { name }, { driver }) => {
+    createIngredient: async (_, { name }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -346,7 +373,10 @@ const resolvers = {
       }
     },
 
-    createCategory: async (_, { name }, { driver }) => {
+    createCategory: async (_, { name }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -370,8 +400,11 @@ const resolvers = {
     updateRecipe: async (
       _,
       { id, title, description, difficulty, time, ingredients, category },
-      { driver }
+      { driver, user }
     ) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const updateQuery = `
@@ -426,7 +459,10 @@ const resolvers = {
       }
     },
 
-    deleteRecipe: async (_, { id }, { driver }) => {
+    deleteRecipe: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -442,7 +478,10 @@ const resolvers = {
       }
     },
 
-    updateIngredient: async (_, { id, name }, { driver }) => {
+    updateIngredient: async (_, { id, name }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -458,7 +497,10 @@ const resolvers = {
         await session.close();
       }
     },
-    deleteIngredient: async (_, { id }, { driver }) => {
+    deleteIngredient: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -473,7 +515,10 @@ const resolvers = {
         await session.close();
       }
     },
-    updateCategory: async (_, { id, name }, { driver }) => {
+    updateCategory: async (_, { id, name }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -489,7 +534,10 @@ const resolvers = {
         await session.close();
       }
     },
-    deleteCategory: async (_, { id }, { driver }) => {
+    deleteCategory: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -504,7 +552,10 @@ const resolvers = {
         await session.close();
       }
     },
-    createUser: async (_, { username }, { driver }) => {
+    createUser: async (_, { username }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -519,7 +570,10 @@ const resolvers = {
         await session.close();
       }
     },
-    updateUser: async (_, { id, username }, { driver }) => {
+    updateUser: async (_, { id, username }, { drive, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
@@ -535,7 +589,10 @@ const resolvers = {
         await session.close();
       }
     },
-    deleteUser: async (_, { id }, { driver }) => {
+    deleteUser: async (_, { id }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
       const session = driver.session();
       try {
         const result = await session.run(
