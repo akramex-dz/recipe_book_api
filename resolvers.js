@@ -4,6 +4,64 @@ require("dotenv").config();
 
 const resolvers = {
   Query: {
+    searchRecipes: async (_, { query }, { driver, user }) => {
+      if(!user){
+        throw new Error("Unauthorized");
+      }
+
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `
+          MATCH (r:Recipe)
+          WHERE toLower(r.title) CONTAINS toLower($query) OR toLower(r.description) CONTAINS toLower($query)
+          OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
+          OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
+          OPTIONAL MATCH (r)-[:CREATED]->(u:User)
+          WITH r, COLLECT(i { id: i.id, name: i.name }) AS ingredients, c { id: c.id, name: c.name } AS category, u { id: u.id, username: u.username } AS createdBy
+          RETURN r {
+            .*,
+            ingredients: ingredients,
+            category: category,
+            createdBy: createdBy
+          } AS recipe
+          `,
+          { query }
+        );
+
+        return result.records.map((record) => record.get("recipe"));
+      } catch (error) {
+        console.error("Error searching recipes:", error);
+        throw new Error("Failed to search recipes");
+      } finally {
+        await session.close();
+      }
+    },
+
+    searchIngredients: async (_, { query }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+      const session = driver.session();
+      try {
+        const result = await session.run(`
+          MATCH (i:Ingredient)
+          WHERE toLower(i.name) CONTAINS toLower($query)
+          OPTIONAL MATCH (i)<-[:HAS_INGREDIENT]-(r:Recipe)
+          WITH i, COLLECT(r { id: r.id, title: r.title }) AS recipes
+          RETURN i { id: i.id, name: i.name, recipes: recipes } AS ingredient
+        `,
+        { query }
+      );
+        return result.records.map((record) => record.get("ingredient"));
+      } catch (error) {
+        console.error("Error fetching ingredients:", error);
+        throw new Error("Failed to fetch ingredients");
+      } finally {
+        await session.close();
+      }
+    },
+    
     // user queries
     getUserInformation: async (_, __, { driver, user }) => {
       if (!user) {
