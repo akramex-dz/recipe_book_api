@@ -26,7 +26,75 @@ const resolvers = {
         await session.close();
       }
     },
-    // recipes queries
+
+    // Get recipes by a specific user ID
+    getRecipesByUserId: async (_, { userId }, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `
+          MATCH (r:Recipe)-[:CREATED]->(u:User {id: $userId})
+          OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
+          OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
+          WITH u, r, COLLECT(i { id: i.id, name: i.name }) AS ingredients, c { id: c.id, name: c.name } AS category
+          RETURN r {
+            .*,
+            ingredients: ingredients,
+            category: category,
+            createdBy: u { id: u.id, username: u.username }
+          } AS recipe
+          `,
+          { userId }
+        );
+
+        return result.records.map((record) => record.get("recipe"));
+      } catch (error) {
+        console.error("Error fetching recipes by user ID:", error);
+        throw new Error("Failed to fetch recipes by user ID");
+      } finally {
+        await session.close();
+      }
+    },
+
+    // Get recipes by the authenticated user
+    getMyRecipes: async (_, __, { driver, user }) => {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+    
+      const session = driver.session();
+      try {
+        const result = await session.run(
+          `
+          MATCH (r:Recipe)-[:CREATED]->(u:User {id: $userId})
+          OPTIONAL MATCH (r)-[:HAS_INGREDIENT]->(i:Ingredient)
+          OPTIONAL MATCH (r)-[:BELONGS_TO]->(c:Category)
+          WITH u, r, COLLECT(i { id: i.id, name: i.name }) AS ingredients, c { id: c.id, name: c.name } AS category
+          RETURN r {
+            .*,
+            ingredients: ingredients,
+            category: category,
+            createdBy: u { id: u.id, username: u.username }
+          } AS recipe
+          `,
+          {
+            userId: user.id, 
+          }
+        );
+    
+        return result.records.map((record) => record.get("recipe"));
+      } catch (error) {
+        console.error("Error fetching recipes by authenticated user:", error);
+        throw new Error("Failed to fetch recipes by authenticated user");
+      } finally {
+        await session.close();
+      }
+    },
+    
+
     getRecipes: async (_, __, { driver, user }) => {
       if (!user) {
         throw new Error("Unauthorized");
@@ -299,8 +367,7 @@ const resolvers = {
         difficulty,
         time,
         ingredients,
-        category,
-        createdByUserId,
+        category
       },
       { driver, user }
     ) => {
@@ -338,7 +405,7 @@ const resolvers = {
             time,
             ingredients,
             category,
-            createdByUserId,
+            createdByUserId : user.id,
           }
         );
         return result.records[0].get("recipe");
