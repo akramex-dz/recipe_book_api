@@ -25,6 +25,7 @@ const resolvers = {
             category: category,
             createdBy: createdBy
           } AS recipe
+          ORDER BY r.createdAt DESC
           `,
           { query }
         );
@@ -50,6 +51,7 @@ const resolvers = {
           OPTIONAL MATCH (i)<-[:HAS_INGREDIENT]-(r:Recipe)
           WITH i, COLLECT(r { id: r.id, title: r.title }) AS recipes
           RETURN i { id: i.id, name: i.name, recipes: recipes } AS ingredient
+          ORDER BY i.createdAt DESC
         `,
         { query }
       );
@@ -104,6 +106,7 @@ const resolvers = {
             category: category,
             createdBy: u { id: u.id, username: u.username }
           } AS recipe
+          ORDER BY r.createdAt DESC
           `,
           { userId }
         );
@@ -137,6 +140,7 @@ const resolvers = {
             category: category,
             createdBy: u { id: u.id, username: u.username }
           } AS recipe
+          ORDER BY r.createdAt DESC
           `,
           {
             userId: user.id, 
@@ -171,6 +175,7 @@ const resolvers = {
             category: category,
             createdBy: createdBy
           } AS recipe
+          ORDER BY r.createdAt DESC
         `);
         return result.records.map((record) => record.get("recipe"));
       } catch (error) {
@@ -199,6 +204,7 @@ const resolvers = {
             category: category,
             createdBy: createdBy
           } AS recipe
+          ORDER BY r.createdAt DESC
         `,
           { id }
         );
@@ -236,6 +242,7 @@ const resolvers = {
           OPTIONAL MATCH (i)<-[:HAS_INGREDIENT]-(r:Recipe)
           WITH i, COLLECT(r { id: r.id, title: r.title }) AS recipes
           RETURN i { id: i.id, name: i.name, recipes: recipes } AS ingredient
+          ORDER BY i.createdAt DESC
         `);
         return result.records.map((record) => record.get("ingredient"));
       } catch (error) {
@@ -339,7 +346,7 @@ const resolvers = {
 
         const result = await session.run(
           `
-  CREATE (u:User {id: randomUUID(), username: $username, email: $email, password: $password})
+  CREATE (u:User {id: randomUUID(), username: $username, email: $email, password: $password, createdAt: datetime()})
   RETURN u
   `,
           { username, email, password: encryptedPassword }
@@ -436,15 +443,15 @@ const resolvers = {
       try {
         const result = await session.run(
           `
-          CREATE (r:Recipe {id: randomUUID(), title: $title, description: $description, difficulty: $difficulty, time: $time})
+          CREATE (r:Recipe {id: randomUUID(), title: $title, description: $description, difficulty: $difficulty, time: $time, createdAt: datetime()})
           WITH r
           UNWIND $ingredients AS ingredientName
           MERGE (i:Ingredient {name: ingredientName})
-          ON CREATE SET i.id = randomUUID()
+          ON CREATE SET i.id = randomUUID(), i.createdAt = datetime()
           MERGE (r)-[:HAS_INGREDIENT]->(i)
           WITH r
           MERGE (c:Category {name: $category})
-          ON CREATE SET c.id = randomUUID()
+          ON CREATE SET c.id = randomUUID(), c.createdAt = datetime()
           MERGE (r)-[:BELONGS_TO]->(c)
           WITH r
           MERGE (u:User {id: $createdByUserId})
@@ -688,7 +695,7 @@ const resolvers = {
       const session = driver.session();
       try {
         const result = await session.run(
-          `CREATE (u:User {id: randomUUID(), username: $username}) RETURN u`,
+          `CREATE (u:User {id: randomUUID(), username: $username, createdAt: datetime()}) RETURN u`,
           { username }
         );
         return result.records[0].get("u").properties;
