@@ -14,9 +14,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Set up Vercel CLI
-    - name: Install Vercel CLI
-      run: npm install -g vercel
+    # # Set up Vercel CLI
+    # - name: Install Vercel CLI
+    #   run: npm install -g vercel
 
     - name: Set up environment variables
       run: |

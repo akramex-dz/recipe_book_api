@@ -20,7 +20,8 @@
     "neo4j": "^2.0.0-RC2",
     "neo4j-driver": "^5.27.0",
     "nodemon": "^3.1.7",
-    "recipe-app": "file:"
+    "recipe-app": "file:",
+    "vercel": "^39.1.2"
   },
   "description": ""
 }
