@@ -30,9 +30,9 @@ POST https://recipebookapi.vercel.app/
 {
   "query": "mutation registerUser($username: String!, $email: String!, $password: String!) { registerUser(username: $username, email: $email, password: $password) { token user { id username email } } }",
   "variables": {
-    "username": "akramo",
-    "email": "akramo@example.com",
-    "password": "akramo"
+    "username": "",
+    "email": "",
+    "password": ""
   }
 }
 ```
@@ -42,11 +42,10 @@ POST https://recipebookapi.vercel.app/
 {
   "data": {
     "registerUser": {
-      "token": "JWT_TOKEN_HERE",
       "user": {
-        "id": "USER_ID",
-        "username": "akramo",
-        "email": "akramo@example.com"
+        "id": "",
+        "username": "",
+        "email": ""
       }
     }
   }
