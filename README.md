@@ -203,9 +203,9 @@ Register a new user.
 - **Variables**:
   ```json
   {
-    "username": "akramo",
-    "email": "akramo@example.com",
-    "password": "akramo"
+    "username": "",
+    "email": "@example.com",
+    "password": ""
   }
   ```
 
@@ -230,8 +230,8 @@ Authenticate a user and retrieve a token.
 - **Variables**:
   ```json
   {
-    "email": "akramo@example.com",
-    "password": "akramo"
+    "email": "",
+    "password": ""
   }
   ```
 
@@ -289,25 +289,3 @@ Most queries and mutations require authentication. Use the `Authorization` heade
 ```
 Authorization: Bearer <JWT_TOKEN>
 ```
-
----
-
-## Error Handling
-
-The API returns errors in the following format:
-```json
-{
-  "errors": [
-    {
-      "message": "Error message here",
-      "locations": [{ "line": X, "column": Y }],
-      "path": ["path", "to", "field"]
-    }
-  ]
-}
-```
-
----
-
-JWT_SECRET=projectNOSQL
-JWT_EXPIRY=30d
