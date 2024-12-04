@@ -1,6 +1,8 @@
 # Recipe Book API Documentation
 
-This document provides details about the GraphQL API for the Recipe Book application. The API is hosted at [https://recipebookapi.vercel.app/](https://recipebookapi.vercel.app/).
+This document provides details about the GraphQL API for the Recipe Book application. 
+The API is hosted at [https://recipebookapi.vercel.app/](https://recipebookapi.vercel.app/).
+The Client-app is hosted at [https://recipes-book-graphql.vercel.app/](https://recipes-book-graphql.vercel.app/).
 
 ## API Overview
 
